@@ -7,12 +7,11 @@ admin_bp = Blueprint("admin", __name__)
 def debug():
     return "Debug information is not available."
 
-# Fixed Weak auth by using a more secure token mechanism
+# ❌ Weak auth
 @admin_bp.route("/admin")
 def admin():
     token = request.args.get("token")
 
-    # Use a more secure token check (e.g., environment variable or hashed token)
-    if token == os.getenv('ADMIN_TOKEN'):
+    if token == "1234":
         return "Welcome admin"
     return "Unauthorized", 403
