@@ -1,16 +1,15 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { logs } from "@/lib/demoData";
-import Link from "next/link";
 
 const stepMeta: Record<string, { icon: string; color: string; label: string }> = {
-  demo:    { icon: "🤖", color: "text-gray-400",   label: "SYSTEM" },
-  attack:  { icon: "⚡", color: "text-red-400",    label: "ATTACK" },
-  report:  { icon: "📋", color: "text-orange-400", label: "REPORT" },
-  blue:    { icon: "🛡️", color: "text-blue-400",   label: "BLUE" },
-  user:    { icon: "👤", color: "text-purple-400",  label: "USER" },
-  apply:   { icon: "🔧", color: "text-yellow-400", label: "APPLY" },
-  retest:  { icon: "🔁", color: "text-orange-400", label: "RETEST" },
+  demo:    { icon: "🤖", color: "text-gray-400",   label: "SYSTEM"  },
+  attack:  { icon: "⚡", color: "text-red-400",    label: "ATTACK"  },
+  report:  { icon: "📋", color: "text-orange-400", label: "REPORT"  },
+  blue:    { icon: "🛡️", color: "text-blue-400",   label: "BLUE"    },
+  user:    { icon: "👤", color: "text-purple-400",  label: "USER"    },
+  apply:   { icon: "🔧", color: "text-yellow-400", label: "APPLY"   },
+  retest:  { icon: "🔁", color: "text-orange-400", label: "RETEST"  },
   secured: { icon: "✅", color: "text-green-400",  label: "SECURED" },
 };
 
@@ -42,9 +41,9 @@ export default function LogsPage() {
   useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current); }, []);
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
       {/* Header */}
-      <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="badge-green mb-4">📡 LIVE FEED</div>
           <h1 className="section-title text-white mb-2">Attack & Remediation Timeline</h1>
@@ -54,24 +53,21 @@ export default function LogsPage() {
           <button
             onClick={startAutoPlay}
             disabled={playing}
-            className="btn-red disabled:opacity-40"
+            className="btn-red disabled:opacity-40 sm:w-auto"
           >
-            {playing ? "⏳ Playing..." : "▶ Auto‑Play Demo"}
+            {playing ? "⏳ Playing..." : "▶ Auto‑Play"}
           </button>
-          <button onClick={reset} className="btn-ghost text-xs">
-            Reset
+          <button onClick={reset} className="btn-ghost sm:w-auto text-xs">
+            ↺ Reset
           </button>
-          <Link href="/" className="btn-ghost text-xs">
-            Back
-          </Link>
         </div>
       </div>
 
       {/* Timeline */}
-      <div className="glass-card p-6">
+      <div className="glass-card p-4 sm:p-6">
         <div className="relative">
-          {/* Vertical line */}
-          <div className="absolute left-[52px] top-0 bottom-0 w-px bg-white/[0.05]" />
+          {/* Vertical line — offset for mobile */}
+          <div className="absolute left-[44px] sm:left-[52px] top-0 bottom-0 w-px bg-white/[0.05]" />
 
           <div className="space-y-1">
             {logs.map((log, i) => {
@@ -80,27 +76,26 @@ export default function LogsPage() {
               return (
                 <div
                   key={i}
-                  className={`flex items-start gap-4 py-3 transition-all duration-500 ${
-                    show ? "opacity-100" : "opacity-0"
+                  className={`flex items-start gap-2 sm:gap-4 py-2.5 transition-all duration-500 ${
+                    show ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2"
                   }`}
-                  style={{ transform: show ? "translateX(0)" : "translateX(-10px)" }}
                 >
-                  {/* Time */}
-                  <span className="text-xs font-mono text-gray-600 w-10 flex-shrink-0 pt-0.5">
+                  {/* Timestamp */}
+                  <span className="text-[10px] sm:text-xs font-mono text-gray-600 w-8 sm:w-10 flex-shrink-0 pt-1">
                     {log.time}
                   </span>
-                  {/* Icon bubble */}
-                  <div className="relative z-10 w-8 h-8 rounded-full bg-[#0f1318] border border-white/10 flex items-center justify-center text-sm flex-shrink-0">
+                  {/* Icon */}
+                  <div className="relative z-10 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#0f1318] border border-white/10 flex items-center justify-center text-xs sm:text-sm flex-shrink-0">
                     {meta.icon}
                   </div>
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className={`text-[10px] font-mono font-bold ${meta.color}`}>
-                        {meta.label}
-                      </span>
-                    </div>
-                    <p className={`text-sm font-mono ${meta.color}`}>{log.message}</p>
+                    <span className={`text-[10px] font-mono font-bold ${meta.color} block mb-0.5`}>
+                      {meta.label}
+                    </span>
+                    <p className={`text-xs sm:text-sm font-mono ${meta.color} break-words`}>
+                      {log.message}
+                    </p>
                   </div>
                 </div>
               );
@@ -110,7 +105,7 @@ export default function LogsPage() {
       </div>
 
       {visible >= logs.length && (
-        <div className="mt-6 p-4 rounded-xl bg-green-950/40 border border-green-900/40 text-green-400 font-mono text-sm text-center">
+        <div className="mt-5 p-4 rounded-xl bg-green-950/40 border border-green-900/40 text-green-400 font-mono text-xs sm:text-sm text-center">
           ✅ Demo complete — all exploits blocked after patching.
         </div>
       )}

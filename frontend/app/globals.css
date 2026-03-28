@@ -17,9 +17,24 @@
 }
 
 @layer base {
+  /* Prevent horizontal overflow on mobile */
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
   body {
     font-family: 'Syne', sans-serif;
     background-color: var(--bg);
+    /* Better tap highlight on mobile */
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+  /* Better touch targets */
+  button, a {
+    min-height: 36px;
   }
   .font-mono {
     font-family: 'Space Mono', monospace;
@@ -45,21 +60,24 @@
   .badge-yellow {
     @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-mono bg-yellow-950/60 text-yellow-400 border border-yellow-900/50;
   }
+  /* Buttons — full-width on mobile, auto on larger */
   .btn-red {
-    @apply px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold transition-all duration-200 text-sm;
+    @apply w-full sm:w-auto px-5 py-3 rounded-xl bg-red-600 hover:bg-red-500 active:bg-red-700 text-white font-semibold transition-all duration-200 text-sm text-center;
   }
   .btn-blue {
-    @apply px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all duration-200 text-sm;
+    @apply w-full sm:w-auto px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-semibold transition-all duration-200 text-sm text-center;
   }
   .btn-ghost {
-    @apply px-5 py-2.5 rounded-xl border border-white/10 hover:border-white/20 text-gray-300 hover:text-white font-semibold transition-all duration-200 text-sm;
+    @apply w-full sm:w-auto px-5 py-3 rounded-xl border border-white/10 hover:border-white/20 active:bg-white/5 text-gray-300 hover:text-white font-semibold transition-all duration-200 text-sm text-center;
   }
+  /* Responsive section title */
   .section-title {
-    @apply text-3xl font-bold tracking-tight;
+    @apply text-2xl sm:text-3xl font-bold tracking-tight;
     font-family: 'Syne', sans-serif;
   }
+  /* Responsive hero — smaller on phones */
   .page-hero {
-    @apply text-5xl md:text-6xl font-extrabold tracking-tighter leading-tight;
+    @apply text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tighter leading-tight;
     font-family: 'Syne', sans-serif;
   }
   .glow-red {
@@ -67,6 +85,11 @@
   }
   .glow-blue {
     box-shadow: 0 0 40px rgba(59,130,246,0.15);
+  }
+  /* Mobile-safe code blocks */
+  .code-block {
+    @apply overflow-x-auto font-mono text-sm;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
@@ -81,12 +104,11 @@ body::before {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
 }
 
-/* Scanline effect */
+/* Scanline — disable on mobile for perf */
 @keyframes scanline {
   0% { transform: translateY(-100%); }
   100% { transform: translateY(100vh); }
 }
-
 .scanline {
   position: fixed;
   top: 0; left: 0; right: 0;
@@ -95,6 +117,9 @@ body::before {
   pointer-events: none;
   z-index: 999;
   animation: scanline 8s linear infinite;
+}
+@media (max-width: 640px) {
+  .scanline { display: none; }
 }
 
 /* Pulse dot */
@@ -118,3 +143,11 @@ body::before {
 .animate-fade-up-delay-2 { animation-delay: 0.2s; opacity: 0; animation-fill-mode: forwards; animation-name: fadeInUp; animation-duration: 0.6s; }
 .animate-fade-up-delay-3 { animation-delay: 0.3s; opacity: 0; animation-fill-mode: forwards; animation-name: fadeInUp; animation-duration: 0.6s; }
 .animate-fade-up-delay-4 { animation-delay: 0.4s; opacity: 0; animation-fill-mode: forwards; animation-name: fadeInUp; animation-duration: 0.6s; }
+
+/* Reduce animation on low-power devices */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
