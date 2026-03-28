@@ -1,6 +1,6 @@
 import sqlite3
 
-DB = "users.db"
+DB = 'users.db'
 
 def init_db():
     conn = sqlite3.connect(DB)
@@ -12,7 +12,8 @@ def init_db():
             username TEXT,
             password TEXT
         )
-    """)
+    """
+    )
 
     cur.execute("DELETE FROM users")
     cur.execute("INSERT INTO users (username, password) VALUES ('admin', 'admin123')")

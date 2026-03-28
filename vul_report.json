@@ -5,31 +5,36 @@
       "type": "SQL Injection",
       "endpoint": "/login",
       "method": "POST",
-      "severity": "CRITICAL"
+      "severity": "CRITICAL",
+      "description": "User input is directly embedded in SQL query without parameterization."
     },
     {
       "type": "Command Injection",
       "endpoint": "/ping",
       "method": "GET",
-      "severity": "CRITICAL"
+      "severity": "CRITICAL",
+      "description": "User input is passed directly to os.popen() allowing shell command execution."
     },
     {
       "type": "Path Traversal",
       "endpoint": "/read",
       "method": "GET",
-      "severity": "HIGH"
+      "severity": "HIGH",
+      "description": "File path from user input is not validated, allowing access to arbitrary files."
     },
     {
       "type": "Sensitive Data Exposure",
       "endpoint": "/debug",
       "method": "GET",
-      "severity": "HIGH"
+      "severity": "HIGH",
+      "description": "Debug information endpoint exposes sensitive data."
     },
     {
       "type": "Weak Auth",
       "endpoint": "/admin",
       "method": "GET",
-      "severity": "CRITICAL"
+      "severity": "CRITICAL",
+      "description": "Admin route uses a hardcoded token for authentication."
     }
   ]
 }

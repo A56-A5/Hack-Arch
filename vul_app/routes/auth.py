@@ -12,9 +12,9 @@ def login():
     conn = sqlite3.connect(DB)
     cur = conn.cursor()
 
-    # ❌ SQL Injection vulnerability
-    query = f"SELECT * FROM users WHERE username='{username}' AND password='{password}'"
-    result = cur.execute(query).fetchone()
+    # Fixed SQL Injection vulnerability using parameterized query
+    query = "SELECT * FROM users WHERE username=? AND password=?"
+    result = cur.execute(query, (username, password)).fetchone()
 
     conn.close()
 
