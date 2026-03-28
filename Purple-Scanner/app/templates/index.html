@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vulnerability Aggregator</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        .scan { margin-bottom: 10px; cursor: pointer; padding: 5px; border: 1px solid #ccc; }
+        .scan.active { background: #eef; }
+        .severity { display: inline-block; width: 70px; }
+        .critical { color: red; }
+        .high { color: orange; }
+        .medium { color: darkorange; }
+        .low { color: green; }
+        .info { color: gray; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        #filters button { margin: 2px; }
+        #filters .active { font-weight: bold; background: #ccc; }
+    </style>
+</head>
+<body>
+    <h1>Vulnerability Aggregator</h1>
+
+    <div>
+        <h3>New Scan</h3>
+        <form id="scanForm">
+            <input type="text" id="target" placeholder="https://example.com" required size="50">
+            <button type="submit">Start Scan</button>
+        </form>
+        <div id="status"></div>
+    </div>
+
+    <hr>
+
+    <div>
+        <h3>Recent Scans</h3>
+        <div id="scansList"></div>
+    </div>
+
+    <div id="results" style="display:none;">
+        <h3>Findings</h3>
+        <div id="filters"></div>
+        <table id="findingsTable">
+            <thead>
+                <tr><th>Severity</th><th>Tool</th><th>Title</th><th>Evidence</th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <div id="pagination"></div>
+    </div>
+
+    <script>
+        var socket = io();
+        var currentScan = null;
+        var currentPage = 1;
+        var currentSeverity = 'all';
+
+        function loadScans() {
+            fetch('/api/scans')
+                .then(res => res.json())
+                .then(data => {
+                    let html = '';
+                    data.scans.forEach(scan => {
+                        html += `<div class="scan" onclick="selectScan(${scan.id})">
+                                    ${scan.target} - ${scan.status} (${new Date(scan.started_at).toLocaleString()})
+                                </div>`;
+                    });
+                    document.getElementById('scansList').innerHTML = html;
+                });
+        }
+
+        function selectScan(scanId) {
+            currentScan = scanId;
+            currentPage = 1;
+            currentSeverity = 'all';
+            document.getElementById('results').style.display = 'block';
+            loadFindings();
+            // Highlight active scan in list (optional)
+        }
+
+        function loadFindings() {
+            let url = `/api/scans/${currentScan}/findings?page=${currentPage}&per_page=20`;
+            if (currentSeverity !== 'all') url += `&severity=${currentSeverity}`;
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    // Update filters
+                    let filtersHtml = '<button class="'+(currentSeverity==='all'?'active':'')+'" onclick="setSeverity(\'all\')">All ('+Object.values(data.summary).reduce((a,b)=>a+b,0)+')</button>';
+                    for (let sev of ['critical','high','medium','low','info']) {
+                        filtersHtml += `<button class="${currentSeverity===sev?'active':''}" onclick="setSeverity('${sev}')">${sev} (${data.summary[sev]||0})</button>`;
+                    }
+                    document.getElementById('filters').innerHTML = filtersHtml;
+
+                    // Fill table
+                    let tbody = document.getElementById('findingsTable').querySelector('tbody');
+                    tbody.innerHTML = '';
+                    data.findings.forEach(f => {
+                        let row = tbody.insertRow();
+                        row.insertCell(0).innerHTML = `<span class="severity ${f.severity}">${f.severity}</span>`;
+                        row.insertCell(1).innerHTML = f.tool;
+                        row.insertCell(2).innerHTML = f.title + (f.description ? '<br><small>'+f.description+'</small>' : '');
+                        row.insertCell(3).innerHTML = f.evidence || '';
+                    });
+
+                    // Pagination
+                    let pagHtml = '';
+                    if (data.page > 1) pagHtml += `<button onclick="goPage(${data.page-1})">Previous</button>`;
+                    pagHtml += ` Page ${data.page} of ${data.pages} `;
+                    if (data.page < data.pages) pagHtml += `<button onclick="goPage(${data.page+1})">Next</button>`;
+                    document.getElementById('pagination').innerHTML = pagHtml;
+                });
+        }
+
+        function setSeverity(sev) {
+            currentSeverity = sev;
+            currentPage = 1;
+            loadFindings();
+        }
+
+        function goPage(page) {
+            currentPage = page;
+            loadFindings();
+        }
+
+        // WebSocket events
+        socket.on('scan_complete', function(data) {
+            if (data.scan_id === currentScan) {
+                loadFindings();
+            }
+            loadScans();
+        });
+
+        // Start scan
+        document.getElementById('scanForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            let target = document.getElementById('target').value;
+            fetch('/api/scans', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({target: target})
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('status').innerHTML = `Scan #${data.scan_id} started.`;
+                loadScans();
+                // optionally select this scan after a short delay
+                setTimeout(() => selectScan(data.scan_id), 1000);
+            });
+        });
+
+        // Initial load
+        loadScans();
+    </script>
+</body>
+</html>
