@@ -1,0 +1,35 @@
+{
+  "target": "http://localhost:8080",
+  "findings": [
+    {
+      "type": "SQL Injection",
+      "endpoint": "/login",
+      "method": "POST",
+      "severity": "CRITICAL"
+    },
+    {
+      "type": "Command Injection",
+      "endpoint": "/ping",
+      "method": "GET",
+      "severity": "CRITICAL"
+    },
+    {
+      "type": "Path Traversal",
+      "endpoint": "/read",
+      "method": "GET",
+      "severity": "HIGH"
+    },
+    {
+      "type": "Sensitive Data Exposure",
+      "endpoint": "/debug",
+      "method": "GET",
+      "severity": "HIGH"
+    },
+    {
+      "type": "Weak Auth",
+      "endpoint": "/admin",
+      "method": "GET",
+      "severity": "CRITICAL"
+    }
+  ]
+}
