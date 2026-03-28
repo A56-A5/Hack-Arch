@@ -37,6 +37,7 @@ export default function FixSuggestionsPage() {
         >
           ✅ Apply All Fixes
         </button>
+        
       </div>
 
       {/* Banner */}
@@ -113,6 +114,9 @@ export default function FixSuggestionsPage() {
             <p className="text-sm text-gray-500">Re-run the Red Agent to confirm all exploits are blocked.</p>
           </div>
           <div className="flex gap-3">
+            <Link href="/" className="btn-ghost">
+            Back
+          </Link>
             <Link href="/logs" className="btn-ghost">View Logs</Link>
             <Link href="/red-report" className="btn-red">Re-run Red Agent →</Link>
           </div>

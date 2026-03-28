@@ -89,7 +89,10 @@ export default function RedReportPage() {
         ))}
       </div>
 
-      <div className="mt-8 flex justify-end">
+      <div className="mt-8 flex gap-3 justify-end">
+        <Link href="/" className="btn-ghost px-8">
+            Back
+          </Link>
         <Link href="/fix-suggestions" className="btn-blue px-8">
           Proceed to Fix Suggestions →
         </Link>

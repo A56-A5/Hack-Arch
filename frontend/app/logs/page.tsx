@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { logs } from "@/lib/demoData";
+import Link from "next/link";
 
 const stepMeta: Record<string, { icon: string; color: string; label: string }> = {
   demo:    { icon: "🤖", color: "text-gray-400",   label: "SYSTEM" },
@@ -58,8 +59,11 @@ export default function LogsPage() {
             {playing ? "⏳ Playing..." : "▶ Auto‑Play Demo"}
           </button>
           <button onClick={reset} className="btn-ghost text-xs">
-            ↺ Reset
+            Reset
           </button>
+          <Link href="/" className="btn-ghost text-xs">
+            Back
+          </Link>
         </div>
       </div>
 

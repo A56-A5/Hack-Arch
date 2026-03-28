@@ -109,6 +109,9 @@ export default function DashboardPage() {
               <Link href="/fix-suggestions" className="block w-full text-center btn-blue">
                 Fix Suggestions →
               </Link>
+              <Link href="/" className="block w-full text-center btn-ghost">
+            Back
+          </Link>
               <button onClick={reset} className="w-full text-xs font-mono text-gray-600 hover:text-gray-400 transition-colors mt-1">
                 ↺ Reset Demo
               </button>
