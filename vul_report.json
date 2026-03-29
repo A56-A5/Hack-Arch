@@ -56,6 +56,48 @@
       "method": "GET",
       "severity": "Low",
       "description": "The Anti-MIME-Sniffing header X-Content-Type-Options was not set to 'nosniff'. This allows older versions of Internet Explorer and Chrome to perform MIME-sniffing on the response body, potentially causing the response body to be interpreted and displayed as a content type other than the declared content type. Current (early 2014) and legacy versions of Firefox will use the declared content type (if one is set), rather than performing MIME-sniffing."
+    },
+    {
+      "type": "HTTP Only Site",
+      "endpoint": "http://localhost:8080",
+      "method": "GET",
+      "severity": "Medium",
+      "description": "The site is only served under HTTP and not HTTPS."
+    },
+    {
+      "type": "SQL Injection",
+      "endpoint": "/login",
+      "method": "POST",
+      "severity": "CRITICAL",
+      "description": "Login bypass via param 'password'"
+    },
+    {
+      "type": "Weak Authentication",
+      "endpoint": "/admin",
+      "method": "GET",
+      "severity": "HIGH",
+      "description": "Admin access granted with weak/default token"
+    },
+    {
+      "type": "XSS",
+      "endpoint": "/search",
+      "method": "GET",
+      "severity": "CRITICAL",
+      "description": "Reflected XSS via 'q'"
+    },
+    {
+      "type": "XSS",
+      "endpoint": "/read",
+      "method": "GET",
+      "severity": "CRITICAL",
+      "description": "Reflected XSS via 'file'"
+    },
+    {
+      "type": "Debug Endpoint Exposed",
+      "endpoint": "/debug",
+      "method": "GET",
+      "severity": "MEDIUM",
+      "description": "Debug endpoint is publicly accessible"
     }
   ]
 }

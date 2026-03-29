@@ -1,4 +1,5 @@
-# red_agent.py (ZAP first, fallback hardcoded scanner)
+# red_agent.py (ZAP + smart fast fallback)
+
 import os
 import json
 import time
@@ -15,10 +16,8 @@ TARGET_URL = os.getenv("TARGET_URL", "http://localhost:8080")
 REPORT_PATH = "./vul_report.json"
 PDF_REPORT_PATH = "./red_report.pdf"
 
-# ZAP config (run ZAP in daemon mode on this port)
 ZAP_API = "http://localhost:8090"
 
-# fallback endpoints if ZAP not available
 DEFAULT_ENDPOINTS = ["/", "/login", "/admin", "/search", "/ping", "/read", "/debug"]
 
 COMMON_PARAMS = ["username", "password", "q", "ip", "file", "token"]
@@ -28,30 +27,37 @@ XSS_PAYLOADS = ["<script>alert(1)</script>"]
 CMD_PAYLOADS = ["; ls"]
 PATH_PAYLOADS = ["../../../../etc/passwd"]
 
+findings_seen = set()
+
+
+# ── HELPERS ───────────────────────────────
+def add_finding(findings, f):
+    key = (f["type"], f["endpoint"], f["method"])
+    if key not in findings_seen:
+        findings_seen.add(key)
+        findings.append(f)
+
 
 # ── ZAP SCANNER ───────────────────────────
 def zap_scan():
     print("[red] trying OWASP ZAP...")
     try:
-        # test connection
         requests.get(f"{ZAP_API}/JSON/core/view/version/", timeout=2)
     except:
-        print("[red] ZAP not running, falling back...")
+        print("[red] ZAP not running")
         return []
 
     try:
-        # Spider
         print("[red] ZAP spidering...")
-        requests.get(f"{ZAP_API}/JSON/spider/action/scan/?url={TARGET_URL}", timeout=2)
+        requests.get(f"{ZAP_API}/JSON/spider/action/scan/?url={TARGET_URL}")
         time.sleep(5)
 
-        # Active scan
         print("[red] ZAP active scanning...")
-        requests.get(f"{ZAP_API}/JSON/ascan/action/scan/?url={TARGET_URL}", timeout=2)
+        requests.get(f"{ZAP_API}/JSON/ascan/action/scan/?url={TARGET_URL}")
         time.sleep(10)
 
-        # Get alerts
-        alerts = requests.get(f"{ZAP_API}/JSON/core/view/alerts/", timeout=2).json()
+        alerts = requests.get(f"{ZAP_API}/JSON/core/view/alerts/").json()
+
         findings = []
         for a in alerts.get("alerts", []):
             findings.append({
@@ -64,76 +70,109 @@ def zap_scan():
 
         print(f"[red] ZAP found {len(findings)} issues")
         return findings
+
     except Exception as e:
-        print("[red] ZAP scan failed:", e)
+        print("[red] ZAP failed:", e)
         return []
 
 
 # ── FALLBACK SCANNER ──────────────────────
 def fallback_scan():
-    print("[red] running fallback scanner...")
+    print("[red] running smart fallback scanner...")
     findings = []
 
     for ep in DEFAULT_ENDPOINTS:
         full_url = urljoin(TARGET_URL, ep)
+        print(f"[red] scanning {ep}")
+
+        # ── DEBUG ENDPOINT DETECTION ──
+        if "debug" in ep:
+            try:
+                r = requests.get(full_url, timeout=2)
+                if r.status_code == 200:
+                    add_finding(findings, {
+                        "type": "Debug Endpoint Exposed",
+                        "endpoint": ep,
+                        "method": "GET",
+                        "severity": "MEDIUM",
+                        "description": "Debug endpoint is publicly accessible"
+                    })
+            except:
+                pass
+
+        # ── WEAK AUTH DETECTION ──
+        if "admin" in ep:
+            try:
+                r = requests.get(full_url, params={"token": "1234"}, timeout=2)
+                if "welcome" in r.text.lower():
+                    add_finding(findings, {
+                        "type": "Weak Authentication",
+                        "endpoint": ep,
+                        "method": "GET",
+                        "severity": "HIGH",
+                        "description": "Admin access granted with weak/default token"
+                    })
+            except:
+                pass
+
         for param in COMMON_PARAMS:
 
-            # SQLi
+            # ── SQLi (LOGIN BYPASS DETECTION) ──
             for payload in SQLI_PAYLOADS:
                 try:
                     r = requests.post(full_url, data={param: payload}, timeout=2)
-                    if "sql" in r.text.lower() or "error" in r.text.lower():
-                        findings.append({
+                    if "logged in" in r.text.lower():
+                        add_finding(findings, {
                             "type": "SQL Injection",
                             "endpoint": ep,
                             "method": "POST",
                             "severity": "CRITICAL",
-                            "description": f"Param '{param}' vulnerable to SQLi"
+                            "description": f"Login bypass via param '{param}'"
                         })
                 except:
                     pass
 
-            # XSS
+            # ── XSS ──
             for payload in XSS_PAYLOADS:
                 try:
                     r = requests.get(full_url, params={param: payload}, timeout=2)
                     if payload in r.text:
-                        findings.append({
+                        add_finding(findings, {
                             "type": "XSS",
                             "endpoint": ep,
                             "method": "GET",
                             "severity": "CRITICAL",
-                            "description": f"Param '{param}' reflects input"
+                            "description": f"Reflected XSS via '{param}'"
                         })
                 except:
                     pass
 
-            # Command Injection
+            # ── COMMAND INJECTION ──
             for payload in CMD_PAYLOADS:
                 try:
                     r = requests.get(full_url, params={param: payload}, timeout=2)
-                    if "root" in r.text.lower() or "ttl" in r.text.lower():
-                        findings.append({
+                    if "uid=" in r.text.lower() or "root" in r.text.lower():
+                        add_finding(findings, {
                             "type": "Command Injection",
                             "endpoint": ep,
                             "method": "GET",
                             "severity": "CRITICAL",
-                            "description": f"Param '{param}' may allow command execution"
+                            "description": f"Command execution via '{param}'"
                         })
                 except:
                     pass
 
-            # Path Traversal
+            # ── PATH TRAVERSAL ──
             for payload in PATH_PAYLOADS:
                 try:
                     r = requests.get(full_url, params={param: payload}, timeout=2)
-                    if "root:" in r.text:
-                        findings.append({
+                    if "root:" in r.text or "[extensions]" in r.text.lower():
+                        add_finding(findings, {
                             "type": "Path Traversal",
                             "endpoint": ep,
                             "method": "GET",
                             "severity": "CRITICAL",
-                            "description": f"Param '{param}' allows file access"
+                            "description": f"Sensitive file read via '{param}'"
                         })
                 except:
                     pass
@@ -177,12 +216,14 @@ def generate_pdf(report):
 def run():
     print("[red] starting scan...")
 
-    # Step 1: ZAP first
     findings = zap_scan()
 
-    # Step 2: fallback to hardcoded endpoints if ZAP fails
+    # fallback if zap fails or misses logic bugs
     if not findings:
         findings = fallback_scan()
+    else:
+        # still run lightweight logic checks
+        findings += fallback_scan()
 
     report = {
         "target": TARGET_URL,
@@ -191,6 +232,7 @@ def run():
 
     save_json(report)
     generate_pdf(report)
+
     print("[red] scan complete.")
 
 
