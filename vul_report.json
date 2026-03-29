@@ -2,39 +2,60 @@
   "target": "http://localhost:8080",
   "findings": [
     {
-      "type": "SQL Injection",
-      "endpoint": "/login",
-      "method": "POST",
-      "severity": "CRITICAL",
-      "description": "User input is directly embedded in SQL query without parameterization."
+      "type": "Missing Anti-clickjacking Header",
+      "endpoint": "http://localhost:8080",
+      "method": "GET",
+      "severity": "Medium",
+      "description": "The response does not protect against 'ClickJacking' attacks. It should include either Content-Security-Policy with 'frame-ancestors' directive or X-Frame-Options."
     },
     {
-      "type": "Command Injection",
-      "endpoint": "/ping",
+      "type": "Content Security Policy (CSP) Header Not Set",
+      "endpoint": "http://localhost:8080/sitemap.xml",
       "method": "GET",
-      "severity": "CRITICAL",
-      "description": "User input is passed directly to os.popen() allowing shell command execution."
+      "severity": "Medium",
+      "description": "Content Security Policy (CSP) is an added layer of security that helps to detect and mitigate certain types of attacks, including Cross Site Scripting (XSS) and data injection attacks. These attacks are used for everything from data theft to site defacement or distribution of malware. CSP provides a set of standard HTTP headers that allow website owners to declare approved sources of content that browsers should be allowed to load on that page \u2014 covered types are JavaScript, CSS, HTML frames, fonts, images and embeddable objects such as Java applets, ActiveX, audio and video files."
     },
     {
-      "type": "Path Traversal",
-      "endpoint": "/read",
+      "type": "Content Security Policy (CSP) Header Not Set",
+      "endpoint": "http://localhost:8080/robots.txt",
       "method": "GET",
-      "severity": "HIGH",
-      "description": "File path from user input is not validated, allowing access to arbitrary files."
+      "severity": "Medium",
+      "description": "Content Security Policy (CSP) is an added layer of security that helps to detect and mitigate certain types of attacks, including Cross Site Scripting (XSS) and data injection attacks. These attacks are used for everything from data theft to site defacement or distribution of malware. CSP provides a set of standard HTTP headers that allow website owners to declare approved sources of content that browsers should be allowed to load on that page \u2014 covered types are JavaScript, CSS, HTML frames, fonts, images and embeddable objects such as Java applets, ActiveX, audio and video files."
     },
     {
-      "type": "Sensitive Data Exposure",
-      "endpoint": "/debug",
+      "type": "Content Security Policy (CSP) Header Not Set",
+      "endpoint": "http://localhost:8080",
       "method": "GET",
-      "severity": "HIGH",
-      "description": "Debug information endpoint exposes sensitive data."
+      "severity": "Medium",
+      "description": "Content Security Policy (CSP) is an added layer of security that helps to detect and mitigate certain types of attacks, including Cross Site Scripting (XSS) and data injection attacks. These attacks are used for everything from data theft to site defacement or distribution of malware. CSP provides a set of standard HTTP headers that allow website owners to declare approved sources of content that browsers should be allowed to load on that page \u2014 covered types are JavaScript, CSS, HTML frames, fonts, images and embeddable objects such as Java applets, ActiveX, audio and video files."
     },
     {
-      "type": "Weak Auth",
-      "endpoint": "/admin",
+      "type": "Server Leaks Version Information via \"Server\" HTTP Response Header Field",
+      "endpoint": "http://localhost:8080",
       "method": "GET",
-      "severity": "CRITICAL",
-      "description": "Admin route uses a hardcoded token for authentication."
+      "severity": "Low",
+      "description": "The web/application server is leaking version information via the \"Server\" HTTP response header. Access to such information may facilitate attackers identifying other vulnerabilities your web/application server is subject to."
+    },
+    {
+      "type": "Server Leaks Version Information via \"Server\" HTTP Response Header Field",
+      "endpoint": "http://localhost:8080/sitemap.xml",
+      "method": "GET",
+      "severity": "Low",
+      "description": "The web/application server is leaking version information via the \"Server\" HTTP response header. Access to such information may facilitate attackers identifying other vulnerabilities your web/application server is subject to."
+    },
+    {
+      "type": "Server Leaks Version Information via \"Server\" HTTP Response Header Field",
+      "endpoint": "http://localhost:8080/robots.txt",
+      "method": "GET",
+      "severity": "Low",
+      "description": "The web/application server is leaking version information via the \"Server\" HTTP response header. Access to such information may facilitate attackers identifying other vulnerabilities your web/application server is subject to."
+    },
+    {
+      "type": "X-Content-Type-Options Header Missing",
+      "endpoint": "http://localhost:8080",
+      "method": "GET",
+      "severity": "Low",
+      "description": "The Anti-MIME-Sniffing header X-Content-Type-Options was not set to 'nosniff'. This allows older versions of Internet Explorer and Chrome to perform MIME-sniffing on the response body, potentially causing the response body to be interpreted and displayed as a content type other than the declared content type. Current (early 2014) and legacy versions of Firefox will use the declared content type (if one is set), rather than performing MIME-sniffing."
     }
   ]
 }
