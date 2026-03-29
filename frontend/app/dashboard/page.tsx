@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { getStatus, startScan, startPatch, SystemStatus } from "@/lib/api";
 
 const flowSteps = [
   { id: 1, label: "Run Attack", icon: "⚡" },
@@ -11,19 +12,72 @@ const flowSteps = [
 ];
 
 export default function DashboardPage() {
-  const [step, setStep] = useState(0);
-  const [secured, setSecured] = useState(false);
+  const [data, setData] = useState<SystemStatus | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const advance = () => {
-    if (step < 5) {
-      setStep((s) => {
-        const next = s + 1;
-        if (next === 5) setSecured(true);
-        return next;
-      });
+  const fetchStatus = async () => {
+    try {
+      const res = await getStatus();
+      setData(res);
+    } catch (err) {
+      console.error("Failed to fetch status:", err);
     }
   };
-  const reset = () => { setStep(0); setSecured(false); };
+
+  useEffect(() => {
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleAction = async () => {
+    if (!data) return;
+    setLoading(true);
+    try {
+      if (data.status === "idle" || data.status === "error") {
+        await startScan();
+      } else if (data.status === "scan_done") {
+        await startPatch();
+      }
+      await fetchStatus();
+    } catch (err) {
+      console.error("Action failed:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStepIndex = (status: string) => {
+    if (status === "idle" || status === "error") return 0;
+    if (status === "scanning") return 1;
+    if (status === "scan_done") return 2;
+    if (status === "patching") return 3;
+    if (status === "secured") return 5;
+    return 0;
+  };
+
+  const step = data ? getStepIndex(data.status) : 0;
+  const status = data?.status || "idle";
+  const stats = data?.stats || { vulnerabilities: 0, high_severity: 0, endpoints: 0 };
+  const secured = status === "secured";
+
+  const handleScan = async () => {
+    try {
+      await startScan();
+      fetchStatus();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handlePatch = async () => {
+    try {
+      await startPatch();
+      fetchStatus();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const endpoints = [
     { path: "/login", preLabel: "SQL Injection vulnerable", postLabel: "SQLi blocked", preBadge: "badge-red", postBadge: "badge-green" },
@@ -37,7 +91,7 @@ export default function DashboardPage() {
         <div className="flex items-center gap-3 mb-2">
           <span className={`w-3 h-3 rounded-full flex-shrink-0 ${secured ? "bg-green-500" : "bg-red-500 pulse-dot"}`} />
           <span className={`text-xs font-mono ${secured ? "text-green-400" : "text-red-400"}`}>
-            {secured ? "SYSTEM SECURED" : "UNDER ATTACK"}
+            {secured ? "SYSTEM SECURED" : data?.status === "scanning" ? "SCANNING..." : data?.status === "patching" ? "PATCHING..." : "UNDER ATTACK"}
           </span>
         </div>
         <h1 className="section-title text-white">Security Dashboard</h1>
@@ -55,7 +109,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between py-2.5 border-b border-white/[0.05]">
                 <span className="text-sm text-gray-400 font-mono">Vulnerabilities</span>
                 <span className={`font-mono text-sm font-bold ${secured ? "text-green-400" : "text-red-400"}`}>
-                  {secured ? "0 OPEN" : "2 OPEN"}
+                  {data?.stats.vulnerabilities || 0} OPEN
                 </span>
               </div>
               <div className="flex items-center justify-between py-2.5 border-b border-white/[0.05] gap-2">
@@ -76,29 +130,78 @@ export default function DashboardPage() {
           {/* Action buttons */}
           <div className="glass-card p-5 sm:p-6">
             <h2 className="font-bold text-white mb-4 text-base sm:text-lg">Actions</h2>
-            <div className="space-y-3">
-              <button
-                onClick={advance}
-                disabled={step >= 5}
-                className="btn-red disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {step === 0 ? "▶ Start Attack Simulation" :
-                 step === 1 ? "📋 Generate Red Report" :
-                 step === 2 ? "🛡️ Generate Fix Suggestions" :
-                 step === 3 ? "✅ Approve & Apply Fixes" :
-                 step === 4 ? "🔁 Re‑run Red Agent" :
-                 "🔒 System Secured"}
-              </button>
-              <Link href="/red-report" className="btn-ghost block">
-                View Red Report →
-              </Link>
-              <Link href="/fix-suggestions" className="btn-blue block">
-                Fix Suggestions →
-              </Link>
-              <button onClick={reset} className="w-full text-xs font-mono text-gray-600 hover:text-gray-400 transition-colors py-2">
-                ↺ Reset Demo
-              </button>
-            </div>
+            
+            {/* IDLE / INITIAL STATE */}
+            {status === "idle" && (
+              <div className="flex flex-col gap-4">
+                <p className="text-gray-400 text-sm font-mono">
+                  System ready. Initialize Red Agent for vulnerability discovery.
+                </p>
+                <button onClick={handleScan} className="btn-red sm:w-auto">
+                  Start Attack Simulation
+                </button>
+              </div>
+            )}
+
+            {/* SCANNING */}
+            {status === "scanning" && (
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-3 text-red-400 font-mono text-sm">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  Autonomous Red Agent probe in progress...
+                </div>
+                <Link href="/logs" className="btn-ghost sm:w-auto text-xs">
+                  View Live Attack Stream
+                </Link>
+              </div>
+            )}
+
+            {/* SCAN DONE - The "Review & Approve" State */}
+            {status === "scan_done" && (
+              <div className="flex flex-col gap-4">
+                <div className="p-3 rounded-lg bg-yellow-950/20 border border-yellow-900/30 text-yellow-500 text-xs font-mono">
+                  ⚠️ {stats.vulnerabilities} vulnerabilities discovered. Review required.
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Link href="/red-report" className="btn-ghost flex-1 text-center">
+                    Review Findings
+                  </Link>
+                  <button onClick={handlePatch} className="btn-blue flex-1">
+                    Approve & Apply Patches
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* PATCHING */}
+            {status === "patching" && (
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-3 text-blue-400 font-mono text-sm">
+                  <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                  Blue Agent applying AI security patches...
+                </div>
+                <Link href="/logs" className="btn-ghost sm:w-auto text-xs">
+                  View Remediation Stream
+                </Link>
+              </div>
+            )}
+
+            {/* SECURED */}
+            {status === "secured" && (
+              <div className="flex flex-col gap-4">
+                <div className="p-3 rounded-lg bg-green-950/20 border border-green-900/30 text-green-400 text-xs font-mono">
+                  ✅ All discovered exploits have been remediated.
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Link href="/logs" className="btn-ghost flex-1 text-center">
+                    Final Audit Log
+                  </Link>
+                  <button onClick={handleScan} className="btn-red flex-1">
+                    Start Re-Validation Scan
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -172,4 +275,4 @@ export default function DashboardPage() {
       </div>
     </div>
   );
-}
+}

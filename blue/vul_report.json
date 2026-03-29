@@ -65,13 +65,6 @@
       "description": "The site is only served under HTTP and not HTTPS."
     },
     {
-      "type": "SQL Injection",
-      "endpoint": "/login",
-      "method": "POST",
-      "severity": "CRITICAL",
-      "description": "Login bypass via param 'password'"
-    },
-    {
       "type": "Weak Authentication",
       "endpoint": "/admin",
       "method": "GET",
