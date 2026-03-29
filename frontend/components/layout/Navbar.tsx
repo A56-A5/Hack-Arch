@@ -23,7 +23,7 @@ export default function Navbar() {
         <Link href="/" className="flex items-center gap-2 flex-shrink-0">
           <span className="w-7 h-7 rounded-md bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center text-xs font-mono font-bold">R</span>
           <span className="font-extrabold text-white tracking-tight" style={{ fontFamily: "Syne, sans-serif" }}>
-            Red<span className="text-blue-400">Blue</span>
+            Re<span className="text-blue-400">Blue AI</span>
           </span>
         </Link>
 

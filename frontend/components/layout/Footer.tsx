@@ -4,7 +4,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
         <div>
           <span className="font-extrabold text-white tracking-tight" style={{ fontFamily: 'Syne, sans-serif' }}>
-            Red<span className="text-blue-400">Blue</span>
+            Re<span className="text-blue-400">Blue AI</span>
           </span>
           <span className="ml-3 text-xs font-mono text-gray-600">Autonomous Red Team Demo</span>
         </div>
